@@ -1,0 +1,50 @@
+[Unit]
+Description=Tdarr Server & Internal Node
+After=network-online.target
+
+[Container]
+Image=ghcr.io/haveagitgat/tdarr:latest
+ContainerName=tdarr-server-node
+AutoUpdate=registry
+
+# --- Environment Variables ---
+# Replace 1000 with your actual UID/GID
+Environment=PUID=1000
+Environment=PGID=1000
+Environment=TZ=America/New_York
+Environment=serverIP=0.0.0.0
+Environment=serverPort=8266
+Environment=serverDualStack=true
+Environment=internalNode=true
+Environment=nodeName=PodmanNode
+Environment=webUIPort=8265
+Environment=inContainer=true
+Environment=ffmpegVersion=7
+
+# --- Network & Logging ---
+Network=host
+LogDriver=k8s-file
+PodmanArgs=--log-opt=max-size=10m --log-opt=max-file=3
+
+# --- GPU Hardware Passthrough ---
+# Passes through all video devices and adds the necessary groups for hardware access. Change groups # to match.
+AddDevice=/dev/dri:/dev/dri
+PodmanArgs=--group-add 44 --group-add 992
+
+# --- Volume Mappings ---
+# Update /home/user/ to your actual local paths
+Volume=/home/user/tdarr/server:/app/server
+Volume=/home/user/tdarr/logs:/app/logs
+Volume=/home/user/tdarr/cache:/temp
+Volume=/home/user/tdarr/cache:/app/unmappedNodeCache
+
+# Media Libraries - Map these to match your Plex/Jellyfin library paths
+Volume=/home/user/Videos/movies:/media/movies
+Volume=/home/user/Videos/tvshows:/media/tvshows
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
